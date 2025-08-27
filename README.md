@@ -1,5 +1,5 @@
-[![Build](https://github.com/swhitty/IdentifiableContinuation/actions/workflows/build.yml/badge.svg)](https://github.com/swhitty/IdentifiableContinuation/actions/workflows/build.yml)
-[![Codecov](https://codecov.io/gh/swhitty/IdentifiableContinuation/graphs/badge.svg)](https://codecov.io/gh/swhitty/IdentifiableContinuation)
+[![Build](https://github.com/swhitty/swift-identifiable-continuation/actions/workflows/build.yml/badge.svg)](https://github.com/swhitty/swift-identifiable-continuation/actions/workflows/build.yml)
+[![Codecov](https://codecov.io/gh/swhitty/swift-identifiable-continuation/graphs/badge.svg)](https://codecov.io/gh/swhitty/swift-identifiable-continuation)
 [![Platforms](https://img.shields.io/endpoint?url=https%3A%2F%2Fswiftpackageindex.com%2Fapi%2Fpackages%2Fswhitty%2Fswift-identifiable-continuation%2Fbadge%3Ftype%3Dplatforms)](https://swiftpackageindex.com/swhitty/swift-identifiable-continuation)
 [![Swift 6.1](https://img.shields.io/endpoint?url=https%3A%2F%2Fswiftpackageindex.com%2Fapi%2Fpackages%2Fswhitty%2Fswift-identifiable-continuation%2Fbadge%3Ftype%3Dswift-versions)](https://swiftpackageindex.com/swhitty/swift-identifiable-continuation)
 
