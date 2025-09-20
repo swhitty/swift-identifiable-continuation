@@ -20,7 +20,7 @@ To install using Swift Package Manager, add this to the `dependencies:` section 
 
 # Usage
 
-With Swift 6, usage is similar to existing continuations.
+Usage is similar to existing continuations.
 
 ```swift
 let val: String = await withIdentifiableContinuation { 
@@ -42,16 +42,6 @@ let val: String = await withIdentifiableContinuation {
 ```
 
 > The above is also compatible in Swift 5 language mode using a Swift 6 compiler e.g. Xcode 16
-
-## Swift 5
-
- While behaviour is identical, Swift 5 compilers (Xcode 15) are unable to inherit actor isolation through the new `#isolation` keyword ([SE-420](https://github.com/swiftlang/swift-evolution/blob/main/proposals/0420-inheritance-of-actor-isolation.md)) so an `isolated` reference to the current actor must always be passed.
-
-```swift
-let val: String = await withIdentifiableContinuation(isolation: self) { 
-  continuations[$0.id] = $0
-}
-```
 
 # Credits
 
