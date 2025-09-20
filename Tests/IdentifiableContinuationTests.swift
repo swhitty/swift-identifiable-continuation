@@ -29,7 +29,6 @@
 //  SOFTWARE.
 //
 
-#if canImport(Testing)
 @testable import IdentifiableContinuation
 import Foundation
 import Testing
@@ -283,4 +282,3 @@ private extension Actor {
 
     }
 }
-#endif

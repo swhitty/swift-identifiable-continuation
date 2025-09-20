@@ -29,7 +29,14 @@
 //  SOFTWARE.
 //
 
-#if compiler(>=6.0)
+#if !canImport(Darwin)
+
+import Synchronization
+
+typealias Mutex = Synchronization.Mutex
+
+#endif
+
 /// Invokes the passed in closure with an `IdentifableContinuation` for the current task.
 ///
 /// The body of the closure executes synchronously on the calling actor. Once it returns the calling task is suspended.
@@ -45,7 +52,6 @@
 ///   - handler: Cancellation closure executed when the current Task is cancelled. Handler is always
 ///    called _after_ the body closure is completed.
 /// - Returns: The value continuation is resumed with.
-@inlinable
 public func withIdentifiableContinuation<T>(
   isolation: isolated (any Actor)? = #isolation,
   function: String = #function,
@@ -54,7 +60,9 @@ public func withIdentifiableContinuation<T>(
 ) async -> T {
     let id = IdentifiableContinuation<T, Never>.ID()
     let state = Mutex((isStarted: false, isCancelled: false))
+    #if compiler(<6.2)
     nonisolated(unsafe) let body = body
+    #endif
     return await withTaskCancellationHandler {
         await withCheckedContinuation(isolation: isolation, function: function) {
             let continuation = IdentifiableContinuation(id: id, continuation: $0)
@@ -93,7 +101,6 @@ public func withIdentifiableContinuation<T>(
 ///   - handler: Cancellation closure executed when the current Task is cancelled. Handler is always
 ///    called _after_ the body closure is completed.
 /// - Returns: The value continuation is resumed with.
-@inlinable
 public func withIdentifiableThrowingContinuation<T>(
   isolation: isolated (any Actor)? = #isolation,
   function: String = #function,
@@ -102,7 +109,9 @@ public func withIdentifiableThrowingContinuation<T>(
 ) async throws -> T {
     let id = IdentifiableContinuation<T, any Error>.ID()
     let state = Mutex((isStarted: false, isCancelled: false))
+    #if compiler(<6.2)
     nonisolated(unsafe) let body = body
+    #endif
     return try await withTaskCancellationHandler {
         try await withCheckedThrowingContinuation(isolation: isolation, function: function) {
             let continuation = IdentifiableContinuation(id: id, continuation: $0)
@@ -125,105 +134,6 @@ public func withIdentifiableThrowingContinuation<T>(
         }
     }
 }
-#else
-/// Invokes the passed in closure with an `IdentifableContinuation` for the current task.
-///
-/// The body of the closure executes synchronously on the calling actor. Once it returns the calling task is suspended.
-/// It is possible to immediately resume the task, or escape the continuation in order to complete it afterwards, which
-/// will then resume the suspended task.
-///
-/// You must invoke the continuation's `resume` method exactly once.
-/// - Parameters:
-///   - isolation: Actor isolation used when executing the body closure.
-///   - function: A string identifying the declaration that is the notional
-///     source for the continuation, used to identify the continuation in
-///     runtime diagnostics related to misuse of this continuation.
-///   - body: A closure that takes a `IdentifiableContinuation` parameter.
-///   - handler: Cancellation closure executed when the current Task is cancelled.  Handler is always called _after_ the body closure is compeled.
-/// - Returns: The value continuation is resumed with.
-@_unsafeInheritExecutor
-@inlinable
-public func withIdentifiableContinuation<T>(
-  isolation: isolated some Actor,
-  function: String = #function,
-  body: (IdentifiableContinuation<T, Never>) -> Void,
-  onCancel handler: @Sendable (IdentifiableContinuation<T, Never>.ID) -> Void
-) async -> T {
-    let id = IdentifiableContinuation<T, Never>.ID()
-    let state = Mutex((isStarted: false, isCancelled: false))
-    return await withTaskCancellationHandler {
-        await withCheckedContinuation(function: function) {
-            let continuation = IdentifiableContinuation(id: id, continuation: $0)
-            body(continuation)
-            let sendCancel = state.withLock {
-                $0.isStarted = true
-                return $0.isCancelled
-            }
-            if sendCancel {
-                handler(id)
-            }
-            _ = isolation
-        }
-    } onCancel: {
-        let sendCancel = state.withLock {
-            $0.isCancelled = true
-            return $0.isStarted
-        }
-        if sendCancel {
-            handler(id)
-        }
-    }
-}
-
-/// Invokes the passed in closure with an `IdentifableContinuation` for the current task.
-///
-/// The body of the closure executes synchronously on the calling actor. Once it returns the calling task is suspended.
-/// It is possible to immediately resume the task, or escape the continuation in order to complete it afterwards, which
-/// will then resume the suspended task.
-///
-/// You must invoke the continuation's `resume` method exactly once.
-/// - Parameters:
-///   - isolation: Actor isolation used when executing the body closure.
-///   - function: A string identifying the declaration that is the notional
-///     source for the continuation, used to identify the continuation in
-///     runtime diagnostics related to misuse of this continuation.
-///   - body: A closure that takes a `IdentifiableContinuation` parameter.
-///   - handler: Cancellation closure executed when the current Task is cancelled.  Handler is always called _after_ the body closure is compeled.
-/// - Returns: The value continuation is resumed with.
-@_unsafeInheritExecutor
-@inlinable
-public func withIdentifiableThrowingContinuation<T>(
-  isolation: isolated some Actor,
-  function: String = #function,
-  body: (IdentifiableContinuation<T, any Error>) -> Void,
-  onCancel handler: @Sendable (IdentifiableContinuation<T, any Error>.ID) -> Void
-) async throws -> T {
-    let id = IdentifiableContinuation<T, any Error>.ID()
-    let state = Mutex((isStarted: false, isCancelled: false))
-    return try await withTaskCancellationHandler {
-        try await withCheckedThrowingContinuation(function: function) {
-            let continuation = IdentifiableContinuation(id: id, continuation: $0)
-            body(continuation)
-            let sendCancel = state.withLock {
-                $0.isStarted = true
-                return $0.isCancelled
-            }
-            if sendCancel {
-                handler(id)
-            }
-            _ = isolation
-        }
-    } onCancel: {
-        let sendCancel = state.withLock {
-            $0.isCancelled = true
-            return $0.isStarted
-        }
-        if sendCancel {
-            handler(id)
-        }
-    }
-}
-#endif
 
 public struct IdentifiableContinuation<T, E>: Sendable, Identifiable where E: Error {
 
@@ -231,7 +141,6 @@ public struct IdentifiableContinuation<T, E>: Sendable, Identifiable where E: Er
 
     public final class ID: Hashable, Sendable {
 
-        @usableFromInline
         init() { }
 
         public func hash(into hasher: inout Hasher) {
@@ -243,7 +152,6 @@ public struct IdentifiableContinuation<T, E>: Sendable, Identifiable where E: Er
         }
     }
 
-    @usableFromInline
     init(id: ID, continuation: CheckedContinuation<T, E>) {
         self.id = id
         self.continuation = continuation
@@ -251,7 +159,6 @@ public struct IdentifiableContinuation<T, E>: Sendable, Identifiable where E: Er
 
     private let continuation: CheckedContinuation<T, E>
 
-#if compiler(>=6.0)
     public func resume(returning value: sending T) {
         continuation.resume(returning: value)
     }
@@ -259,15 +166,6 @@ public struct IdentifiableContinuation<T, E>: Sendable, Identifiable where E: Er
     public func resume(with result: sending Result<T, E>) {
         continuation.resume(with: result)
     }
-#else
-    public func resume(returning value: T) {
-        continuation.resume(returning: value)
-    }
-
-    public func resume(with result: Result<T, E>) {
-        continuation.resume(with: result)
-    }
-#endif
 
     public func resume(throwing error: E) {
         continuation.resume(throwing: error)
