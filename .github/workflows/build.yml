@@ -6,10 +6,10 @@ on:
   workflow_dispatch:
 
 jobs:
-  xcode_16_4:
-    runs-on: macos-15
+  xcode_26_2:
+    runs-on: macos-26
     env:
-      DEVELOPER_DIR: /Applications/Xcode_16.4.app/Contents/Developer
+      DEVELOPER_DIR: /Applications/Xcode_26.2.app/Contents/Developer
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -27,10 +27,24 @@ jobs:
           token: ${{ secrets.CODECOV_TOKEN }}
           files: ./coverage_report.lcov
 
-  xcode_26:
+  xcode_26_1:
     runs-on: macos-15
     env:
-      DEVELOPER_DIR: /Applications/Xcode_26.0.app/Contents/Developer
+      DEVELOPER_DIR: /Applications/Xcode_26.1.1.app/Contents/Developer
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Version
+        run: swift --version
+      - name: Build
+        run: swift build --build-tests
+      - name: Test
+        run: swift test --skip-build
+
+  xcode_16_4:
+    runs-on: macos-15
+    env:
+      DEVELOPER_DIR: /Applications/Xcode_16.4.app/Contents/Developer
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -83,7 +97,7 @@ jobs:
 
   linux_swift_6_2:
     runs-on: ubuntu-latest
-    container: swiftlang/swift:nightly-6.2-noble
+    container: swift:6.2
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -111,20 +125,17 @@ jobs:
       - name: Build
         run: swift build --swift-sdk x86_64-swift-linux-musl
 
-  linux_swift_6_1_android:
+  android_6_2:
     runs-on: ubuntu-latest
-    container: swift:6.1.2
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-      - name: Version
-        run: swift --version
-      - name: Install SDK
-        run: swift sdk install https://github.com/finagolfin/swift-android-sdk/releases/download/6.1.2/swift-6.1.2-RELEASE-android-24-0.1.artifactbundle.tar.gz --checksum 6d817c947870e8c85e6cab9a6ab6d7313b50fa5a20b890c396723c0b16ab32d9
-      - name: Build
-        run: swift build --swift-sdk aarch64-unknown-linux-android24
+      - name: Build and Test
+        uses: skiptools/swift-android-action@v2
+        with:
+          swift-version: 6.2
 
-  windows_swift_6_1:
+  windows_swift_6_2:
     runs-on: windows-latest
     steps:
       - name: Checkout
